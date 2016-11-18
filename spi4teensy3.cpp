@@ -303,5 +303,38 @@ namespace spi4teensy3 {
                 }
 
         }
+        void send_receive(void *bufr, void *data_in, size_t n) {
+                int i;
+                int nf;
+                uint8_t *buf = (uint8_t *)bufr;
+                uint16_t *data = (uint16_t *)data_in;
+
+                // clear any data in RX/TX FIFOs, and be certain we are in master mode.
+                SPI0_MCR = SPI_MCR_MSTR | SPI_MCR_CLR_RXF | SPI_MCR_CLR_TXF | SPI_MCR_PCSIS(0x1F);
+                // initial number of words to push into TX FIFO
+                nf = n / 2 < 3 ? n / 2 : 3;
+                // limit for pushing data into TX fifo
+                uint8_t* limit = buf + n;
+                for(i = 0; i < nf; i++) {
+                        uint16_t w = (*buf++) << 8;
+                        w |= *buf++;
+                        SPI0_PUSHR = SPI_PUSHR_CONT | SPI_PUSHR_CTAS(1) | w;
+                }
+                // write data to TX FIFO
+                while(buf < limit) {
+                        uint16_t w = *buf++ << 8;
+                        w |= *buf++;
+                        while(!(SPI0_SR & SPI_SR_RXCTR));
+                        SPI0_PUSHR = SPI_PUSHR_CONT | SPI_PUSHR_CTAS(1) | w;
+                        *data++ = SPI0_POPR;
+                }
+                // wait for data to be sent
+                while(nf) {
+                        while(!(SPI0_SR & SPI_SR_RXCTR));
+                        *data++ = SPI0_POPR;
+                        nf--;
+                }
+        }
 }
 #endif
+

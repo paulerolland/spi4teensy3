@@ -37,9 +37,11 @@ namespace spi4teensy3 {
         void send(void *bufr, size_t n);
         uint8_t receive();
         void receive(void *bufr, size_t n);
+        void send_receive(void *bufr, void *data_in, size_t n);
 
         //void updatectars();
 };
 #endif /* __MK20DX128__ || __MK20DX256__ */
 #endif	/* SPI4TEENSY3_H */
+
 
